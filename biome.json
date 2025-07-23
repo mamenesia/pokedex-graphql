@@ -17,7 +17,27 @@
     "rules": {
       "recommended": true,
       "suspicious": {
-        "noConsole": "warn"
+        "noConsole": "warn",
+        "noExplicitAny": "warn",
+        "noArrayIndexKey": "warn"
+      },
+      "a11y": {
+        "noStaticElementInteractions": "warn",
+        "useKeyWithClickEvents": "warn",
+        "useKeyWithMouseEvents": "warn"
+      },
+      "nursery": {
+        "noNoninteractiveElementInteractions": "warn"
+      },
+      "style": {
+        "useImportType": "warn"
+      },
+      "performance": {
+        "noImgElement": "warn"
+      },
+      "correctness": {
+        "noUnusedImports": "warn",
+        "useExhaustiveDependencies": "warn"
       }
     }
   },
