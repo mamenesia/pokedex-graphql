@@ -24,7 +24,7 @@ jobs:
       - name: Detect package manager
         id: detect-package-manager
         run: |
-          if [ -f "./bun.lockb" ]; then
+          if [ -f "./bun.lockb" ] || [ -f "./bun.lock" ]; then
             echo "PACKAGE_MANAGER=bun" >> $GITHUB_ENV
             echo "detected=bun" >> $GITHUB_OUTPUT
           elif [ -f "./yarn.lock" ]; then
