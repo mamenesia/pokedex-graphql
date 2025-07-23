@@ -38,9 +38,10 @@ jobs:
       # Setup Node.js with caching for npm or yarn
       - name: Setup Node.js
         uses: actions/setup-node@v3
+        if: env.PACKAGE_MANAGER != 'bun'
         with:
           node-version: "20"
-          cache: ${{ env.PACKAGE_MANAGER != 'bun' && env.PACKAGE_MANAGER || '' }}
+          cache: ${{ env.PACKAGE_MANAGER }}
           cache-dependency-path: ${{ env.PACKAGE_MANAGER == 'yarn' && 'yarn.lock' || 'package-lock.json' }}
 
       # Setup Bun with manual caching
