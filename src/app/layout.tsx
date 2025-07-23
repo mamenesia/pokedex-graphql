@@ -7,20 +7,20 @@ import { ApolloProviderWrapper } from "@/components/providers/apollo-provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Pokedex GraphQL",
-  description: "A comprehensive Pokedex built with Next.js and GraphQL",
+	title: "Pokedex GraphQL",
+	description: "A comprehensive Pokedex built with Next.js and GraphQL",
 };
 
 export default function RootLayout({
-  children,
+	children,
 }: Readonly<{
-  children: React.ReactNode;
+	children: React.ReactNode;
 }>) {
-  return (
-    <html lang="en">
-      <body className={cn("text-base antialiased", inter.className)}>
-        <ApolloProviderWrapper>{children}</ApolloProviderWrapper>
-      </body>
-    </html>
-  );
+	return (
+		<html lang="en">
+			<body className={cn("text-base antialiased", inter.className)}>
+				<ApolloProviderWrapper>{children}</ApolloProviderWrapper>
+			</body>
+		</html>
+	);
 }

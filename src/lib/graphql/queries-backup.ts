@@ -2,44 +2,44 @@ import { gql } from "@apollo/client";
 
 // Optimized query to get a list of Pokemon with essential information only (limited to first 9 generations)
 export const GET_POKEMON_LIST = gql`
-  query GetPokemonList($limit: Int = 20, $offset: Int = 0, $orderBy: [pokemon_v2_pokemon_order_by!] = [{ id: asc }]) {
-    pokemon_v2_pokemon(
+  query GetPokemonList($limit: Int = 20, $offset: Int = 0, $orderBy: [pokemon_order_by!] = [{ id: asc }]) {
+    pokemon(
       limit: $limit, 
       offset: $offset, 
       order_by: $orderBy,
       where: {
-        pokemon_v2_pokemonspecy: {
+        pokemonspecy: {
           generation_id: { _lte: 9 }
         }
       }
     ) {
       id
       name
-      pokemon_v2_pokemonsprites {
+      pokemonsprites {
         sprites
       }
-      pokemon_v2_pokemontypes {
-        pokemon_v2_type {
+      pokemontypes {
+        type {
           id
           name
         }
       }
       # Only fetch first 4 stats for performance (HP, Attack, Defense, Sp. Attack)
-      pokemon_v2_pokemonstats(limit: 4, order_by: { stat_id: asc }) {
+      pokemonstats(limit: 4, order_by: { stat_id: asc }) {
         base_stat
-        pokemon_v2_stat {
+        stat {
           name
         }
       }
       # Include generation data for display
-      pokemon_v2_pokemonspecy {
+      pokemonspecy {
         generation_id
       }
     }
     # Get total count for pagination
-    pokemon_v2_pokemon_aggregate(
+    pokemon_aggregate(
       where: {
-        pokemon_v2_pokemonspecy: {
+        pokemonspecy: {
           generation_id: { _lte: 9 }
         }
       }
@@ -54,34 +54,34 @@ export const GET_POKEMON_LIST = gql`
 // Query to get a single Pokemon by ID with detailed information
 export const GET_POKEMON_BY_ID = gql`
   query GetPokemonById($id: Int!) {
-    pokemon_v2_pokemon_by_pk(id: $id) {
+    pokemon_by_pk(id: $id) {
       id
       name
       height
       weight
       base_experience
-      pokemon_v2_pokemonsprites {
+      pokemonsprites {
         sprites
       }
-      pokemon_v2_pokemontypes {
-        pokemon_v2_type {
+      pokemontypes {
+        type {
           id
           name
         }
       }
-      pokemon_v2_pokemonstats {
+      pokemonstats {
         base_stat
-        pokemon_v2_stat {
+        stat {
           name
         }
       }
       # Pokemon abilities
-      pokemon_v2_pokemonabilities {
+      pokemonabilities {
         is_hidden
-        pokemon_v2_ability {
+        ability {
           id
           name
-          pokemon_v2_abilityeffecttexts(
+          abilityeffecttexts(
             where: { language_id: { _eq: 9 } }
             limit: 1
           ) {
@@ -91,33 +91,42 @@ export const GET_POKEMON_BY_ID = gql`
         }
       }
       # Pokemon moves (limit to recent level-up moves)
-      pokemon_v2_pokemonmoves(
+      pokemonmoves(
         where: { 
-          pokemon_v2_movelearnmethod: { name: { _eq: "level-up" } }
+          movelearnmethod: { name: { _eq: "level-up" } }
           level: { _lte: 50 }
         }
         order_by: [{ level: asc }]
         limit: 20
       ) {
         level
-        pokemon_v2_move {
+        move {
           id
           name
           power
           accuracy
           pp
-          pokemon_v2_type {
+          type {
             name
           }
-          pokemon_v2_movedamageclass {
+          movedamageclass {
             name
+          }
+          moveeffect {
+            moveeffectproses(
+              where: { language_id: { _eq: 9 } }
+              limit: 1
+            ) {
+              short_effect
+              effect
+            }
           }
         }
       }
-      pokemon_v2_pokemonspecy {
+      pokemonspecy {
         name
         evolution_chain_id
-        pokemon_v2_pokemonspeciesflavortexts(
+        pokemonspeciesflavortexts(
           where: { language_id: { _eq: 9 } }
           limit: 1
         ) {
@@ -255,6 +264,129 @@ export const SEARCH_POKEMON = gql`
     pokemon_v2_pokemon_aggregate(
       where: {
         name: { _ilike: $name }
+      }
+    ) {
+      aggregate {
+        count
+      }
+    }
+  }
+`;
+
+// OPTIMIZED: Single consolidated query for all search/filter/sort operations
+export const GET_POKEMON_OPTIMIZED = gql`
+  query GetPokemonOptimized(
+    $limit: Int = 20,
+    $offset: Int = 0,
+    $orderBy: [pokemon_v2_pokemon_order_by!] = [{ id: asc }],
+    $searchTerm: String = "",
+    $types: [String!] = [],
+    $generations: [Int!] = [],
+    $hasSearch: Boolean = false,
+    $hasTypes: Boolean = false,
+    $hasGenerations: Boolean = false
+  ) {
+    pokemon_v2_pokemon(
+      limit: $limit,
+      offset: $offset,
+      order_by: $orderBy,
+      where: {
+        _and: [
+          # Search condition - only apply if hasSearch is true
+          {
+            _or: [
+              { _not: $hasSearch },
+              { name: { _iregex: $searchTerm } },
+              { id: { _eq: $searchTerm } }
+            ]
+          },
+          # Type filtering - only apply if hasTypes is true
+          {
+            _or: [
+              { _not: $hasTypes },
+              {
+                pokemon_v2_pokemontypes: {
+                  pokemon_v2_type: { name: { _in: $types } }
+                }
+              }
+            ]
+          },
+          # Generation filtering - only apply if hasGenerations is true
+          {
+            _or: [
+              { _not: $hasGenerations },
+              {
+                pokemon_v2_pokemonspecy: {
+                  generation_id: { _in: $generations }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ) {
+      id
+      name
+      # OPTIMIZED: Limit sprites to single entry for performance
+      pokemon_v2_pokemonsprites(limit: 1) {
+        sprites
+      }
+      # OPTIMIZED: Limit types to 2 (Pokemon can have max 2 types)
+      pokemon_v2_pokemontypes(limit: 2, order_by: { slot: asc }) {
+        pokemon_v2_type {
+          id
+          name
+        }
+      }
+      # OPTIMIZED: Only fetch essential stats (HP, Attack, Defense, Sp.Attack, Sp.Defense, Speed)
+      pokemon_v2_pokemonstats(
+        where: { stat_id: { _in: [1, 2, 3, 4, 5, 6] } }
+        order_by: { stat_id: asc }
+      ) {
+        base_stat
+        pokemon_v2_stat {
+          id
+          name
+        }
+      }
+      # Generation info for filtering
+      pokemon_v2_pokemonspecy {
+        generation_id
+      }
+    }
+    
+    # OPTIMIZED: Single aggregate query with same conditions for accurate pagination
+    pokemon_v2_pokemon_aggregate(
+      where: {
+        _and: [
+          {
+            _or: [
+              { _not: $hasSearch },
+              { name: { _iregex: $searchTerm } },
+              { id: { _eq: $searchTerm } }
+            ]
+          },
+          {
+            _or: [
+              { _not: $hasTypes },
+              {
+                pokemon_v2_pokemontypes: {
+                  pokemon_v2_type: { name: { _in: $types } }
+                }
+              }
+            ]
+          },
+          {
+            _or: [
+              { _not: $hasGenerations },
+              {
+                pokemon_v2_pokemonspecy: {
+                  generation_id: { _in: $generations }
+                }
+              }
+            ]
+          }
+        ]
       }
     ) {
       aggregate {
