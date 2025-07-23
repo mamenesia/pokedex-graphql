@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.2](https://github.com/mamenesia/pokedex-graphql/compare/v0.1.1...v0.1.2) (2025-07-23)
+
+
+### Bug Fixes
+
+* build ([64e85e4](https://github.com/mamenesia/pokedex-graphql/commit/64e85e436b62c544232d69c3f4410792f207586b))
+
 ### 0.1.1 (2025-07-23)
 
 
